@@ -1,5 +1,5 @@
 # Don't commit keys.
-keys/**
+keys/default_host.key
 
 # Logs
 logs
