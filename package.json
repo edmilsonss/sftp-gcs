@@ -13,14 +13,14 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kolban-google/sftp-gcs.git"
+    "url": "https://github.com/edmilsonss/sftp-gcs.git"
   },
   "dependencies": {
-    "@google-cloud/logging-winston": "^4.1.1",
-    "@google-cloud/storage": "^5.5.0",
-    "ssh2": "^1.5.0",
+    "@google-cloud/logging-winston": "^5.1.1",
+    "@google-cloud/storage": "^6.2.3",
+    "ssh2": "^1.11.0",
     "ssh2-streams": "^0.4.10",
-    "winston": "^3.3.3",
-    "yargs": "^16.1.1"
+    "winston": "^3.8.1",
+    "yargs": "^17.5.1"
   }
 }
