@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 /**
  * Become an SFTP server that uses Google Cloud Storage as the back-end storage
  * system.  The applications uses the SSH2 Node.js package which provides a high level implementation of the
@@ -12,17 +14,17 @@ const fs = require('fs');
 const crypto = require('crypto');
 const ssh2 = require('ssh2');
 const { SFTPStream } = require('ssh2-streams');
-const PATH = require('path');
+const PATH = require('node:path/posix');
 const winston = require('winston');
 const { format } = winston;
 
 // Imports the Google Cloud client library for Winston
-const { LoggingWinston } = require('@google-cloud/logging-winston');
+// const { LoggingWinston } = require('@google-cloud/logging-winston');
 const { dir } = require('console');
 
-const loggingWinston = new LoggingWinston({
-    "logName": "sftp-gcs"
-});
+// const loggingWinston = new LoggingWinston({
+//     "logName": "sftp-gcs"
+// });
 const myFormat = format.printf(({ level, message, timestamp }) => {
     return `${timestamp} ${level}: ${message}`;
 });
@@ -55,21 +57,22 @@ const argv = require('yargs')
 // Uncomment the following to log the passed in arguments.
 // console.log(`args: ${util.inspect(argv)}`);
 
+const logger = console;
 // Create a Winston logger that streams to Stackdriver Logging
 // Logs will be written to: "projects/YOUR_PROJECT_ID/logs/winston_log"
-const logger = winston.createLogger({
-    level: argv.debug,
-    transports: [
-        new winston.transports.Console(),
-        // Add Cloud Logging Logging
-        loggingWinston,
-    ],
-    format: format.combine(
-        format.label({ label: 'sftp-gcs', message: true }),
-        format.timestamp(),
-        myFormat
-    )
-});
+// const logger = winston.createLogger({
+//     level: argv.debug,
+//     transports: [
+//         new winston.transports.Console(),
+//         // Add Cloud Logging Logging
+//         loggingWinston,
+//     ],
+//     format: format.combine(
+//         format.label({ label: 'sftp-gcs', message: true }),
+//         format.timestamp(),
+//         myFormat
+//     )
+// });
 /*
 ATTRS
 An object with the following valid properties:
@@ -190,11 +193,7 @@ async function getStatData(path) {
         }
 
         // We don't have an exact name match now we look to see if we have a file with this as a prefix.
-        const [fileList] = await bucket.getFiles({
-            "delimiter": '/',
-            "directory": path,
-            "autoPaginate": false
-        });
+        const [fileList] = await bucket.getFiles({ prefix: path });
         if (fileList.length == 0) {
             logger.debug(`Could not find ${path}`);
             return null;
@@ -603,11 +602,7 @@ new ssh2.Server({
                         // asked to open "/dir".  This will have been normalized to "dir".  From a GCS perspective, we now want to determine if there are any files
                         // that begin with the prefix "dir/".  If yes, then the directory exists.
                         try {
-                            const [fileList] = await bucket.getFiles({
-                                "directory": path,
-                                "delimiter": "/",
-                                "autoPaginate": false
-                            });
+                            const [fileList] = await bucket.getFiles({prefix : path });
                             if (fileList.length == 0) {
                                 logger.debug(`we found no files/directories with directory: "${path}"`);
                                 return sftpStream.status(reqId, STATUS_CODE.NO_SUCH_FILE);
@@ -666,10 +661,7 @@ new ssh2.Server({
                     fileRecord.readComplete = true;
 
                     bucket.getFiles({
-                        "autoPaginate": false,
-                        "delimiter": '/',
-                        "directory": fileRecord.path,
-                        "includeTrailingDelimiter": true
+                        prefix: fileRecord.path
                     }, (err, fileList, nextQuery, apiResponse) => {
                         // The responses from a GCS file list are two parts.  One part is files in the current "directory" while the other part is the
                         // list of directories.  This is of course fake as GCS has no concept of directories.
@@ -875,12 +867,7 @@ new ssh2.Server({
 
                     try {
                         // Let us see if we have files that end in path:
-                        const [fileList] = await bucket.getFiles({
-                            "autoPaginate": false,
-                            "delimiter": "/",
-                            "prefix": path,
-                            "maxResults": 2
-                        });
+                        const [fileList] = await bucket.getFiles({ prefix : path, maxResults: 2 });
                         if (fileList.length == 0) {
                             logger.debug(`No such file/directory: "${path}"`);
                             return sftpStream.status(reqId, STATUS_CODE.NO_SUCH_FILE);
